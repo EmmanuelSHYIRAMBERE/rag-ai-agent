@@ -49,7 +49,7 @@ def ingest():
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
     chunks = splitter.split_documents(all_docs)
 
-    embeddings = OllamaEmbeddings(model=config.embedding_model)
+    embeddings = OllamaEmbeddings(model=config.embedding_model, base_url=config.ollama_host)
     db = FAISS.from_documents(chunks, embeddings)
     db.save_local(config.vectorstore_path)
 

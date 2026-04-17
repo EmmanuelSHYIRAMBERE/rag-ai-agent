@@ -5,7 +5,7 @@ from config import config
 import requests
 import json
 
-llm = ChatOllama(model=config.model_name, temperature=0)
+llm = ChatOllama(model=config.model_name, temperature=0, base_url=config.ollama_host)
 
 FOODBUNDLES_KEYWORDS = [
     "foodbundles", "food bundle", "order", "ordering", "wallet", "loan",

@@ -1,0 +1,63 @@
+services:
+
+  ollama:
+    image: ollama/ollama
+    container_name: foodbundles_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ingest:
+    build: .
+    container_name: foodbundles_ingest
+    command: python main.py ingest
+    volumes:
+      - ./data:/app/data
+      - vectorstore_data:/app/vectorstore
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
+
+  streamlit:
+    build: .
+    container_name: foodbundles_ui
+    command: streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+      - vectorstore_data:/app/vectorstore
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      - ingest
+    restart: unless-stopped
+
+  api:
+    build: .
+    container_name: foodbundles_api
+    command: uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - vectorstore_data:/app/vectorstore
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      - ingest
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+  vectorstore_data:
